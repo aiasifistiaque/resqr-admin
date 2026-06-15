@@ -1,11 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { X } from 'lucide-react';
-import { getCategories, createItem, updateItem, uploadImage } from '@/lib/api';
+import { getCategories, createItem, updateItem } from '@/lib/api';
 import Toast from '@/components/ui/Toast';
+import ImagePicker from '@/components/ui/ImagePicker';
 import type { Category, Item } from '@/lib/types';
 
 interface Props {
@@ -33,23 +33,11 @@ export default function ItemForm({ item }: Props) {
   const [colorInput, setColorInput] = useState('');
   const [ingredientInput, setIngredientInput] = useState('');
   const [saving, setSaving] = useState(false);
-  const [uploading, setUploading] = useState(false);
   const [toast, setToast] = useState<ToastState | null>(null);
 
   useEffect(() => {
     getCategories().then(({ data }) => setCats(data.doc || [])).catch(() => {});
   }, []);
-
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setUploading(true);
-    try {
-      const { data } = await uploadImage(file);
-      setForm((f) => ({ ...f, image: data.data.url }));
-    } catch { setToast({ message: 'Image upload failed', type: 'error' }); }
-    finally { setUploading(false); }
-  };
 
   const toggleCategory = (id: string) => {
     setForm((f) => ({
@@ -132,14 +120,10 @@ export default function ItemForm({ item }: Props) {
       {/* Image */}
       <div className="bg-white rounded-xl border border-gray-100 p-6 space-y-4">
         <h2 className="font-semibold text-gray-900">Image</h2>
-        {form.image && (
-          <div className="relative w-28 h-28 rounded-xl overflow-hidden border border-gray-200">
-            <Image src={form.image} alt="preview" fill className="object-cover" />
-          </div>
-        )}
-        <input type="file" accept="image/*" onChange={handleImageUpload}
-          className="text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" />
-        {uploading && <p className="text-xs text-indigo-600">Uploading…</p>}
+        <ImagePicker
+          value={form.image}
+          onChange={(url) => setForm((f) => ({ ...f, image: url }))}
+        />
       </div>
 
       {/* Categories */}

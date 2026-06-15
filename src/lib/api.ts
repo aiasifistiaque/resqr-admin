@@ -69,10 +69,13 @@ export const updateCollection = (id: string, data: object) => api.put(`/collecti
 export const deleteCollection = (id: string) => api.delete(`/collections/${id}`);
 
 // Upload
-export const uploadImage = (file: File) => {
+export const uploadImage = (file: globalThis.File) => {
   const form = new FormData();
   form.append('image', file);
   return api.post<{ data: { url: string } }>('/upload', form, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
 };
+
+export const getUploadedImages = () =>
+  api.get<{ doc: { _id: string; url: string; name: string; type: string }[] }>('/upload');

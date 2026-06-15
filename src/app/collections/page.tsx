@@ -6,7 +6,8 @@ import { Plus, Pencil, Trash2, ImageIcon, X } from 'lucide-react';
 import AdminLayout from '@/components/AdminLayout';
 import Modal from '@/components/ui/Modal';
 import Toast from '@/components/ui/Toast';
-import { getCollections, createCollection, updateCollection, deleteCollection, getItems, uploadImage } from '@/lib/api';
+import { getCollections, createCollection, updateCollection, deleteCollection, getItems } from '@/lib/api';
+import ImagePicker from '@/components/ui/ImagePicker';
 import Pagination from '@/components/ui/Pagination';
 import type { Collection, Item } from '@/lib/types';
 
@@ -35,7 +36,6 @@ export default function CollectionsPage() {
   const [selected, setSelected] = useState<Collection | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
-  const [uploading, setUploading] = useState(false);
   const [toast, setToast] = useState<ToastState | null>(null);
   const [itemSearch, setItemSearch] = useState('');
 
@@ -77,17 +77,6 @@ export default function CollectionsPage() {
   };
 
   const closeModal = () => { setModal(null); setSelected(null); };
-
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setUploading(true);
-    try {
-      const { data } = await uploadImage(file);
-      setForm((f) => ({ ...f, image: data.data.url }));
-    } catch { setToast({ message: 'Image upload failed', type: 'error' }); }
-    finally { setUploading(false); }
-  };
 
   const toggleItem = (id: string) => {
     setForm((f) => ({
@@ -256,21 +245,11 @@ export default function CollectionsPage() {
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Image</label>
-              {form.image && (
-                <div className="mb-2 relative w-20 h-20 rounded-lg overflow-hidden border border-gray-200">
-                  <Image src={form.image} alt="preview" fill className="object-cover" />
-                </div>
-              )}
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleImageUpload}
-                className="text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
-              />
-              {uploading && <p className="text-xs text-indigo-600 mt-1">Uploading…</p>}
-            </div>
+            <ImagePicker
+              label="Image"
+              value={form.image}
+              onChange={(url) => setForm((f) => ({ ...f, image: url }))}
+            />
 
             <div className="grid grid-cols-2 gap-4">
               <div>
