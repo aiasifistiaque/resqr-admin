@@ -79,3 +79,36 @@ export const uploadImage = (file: globalThis.File) => {
 
 export const getUploadedImages = () =>
   api.get<{ doc: { _id: string; url: string; name: string; type: string }[] }>('/upload');
+
+// Menu Design
+export interface MenuSection {
+  id: string;
+  type: string;
+  label: string;
+  visible: boolean;
+  layout: 'grid' | 'list';
+}
+
+export interface MenuDesignData {
+  restaurantName: string;
+  tagline: string;
+  logo: string;
+  bannerImage: string;
+  primaryColor: string;
+  backgroundColor: string;
+  surfaceColor: string;
+  textColor: string;
+  textMutedColor: string;
+  fontFamily: 'inter' | 'playfair' | 'poppins' | 'raleway' | 'lato';
+  headerStyle: 'minimal' | 'hero' | 'centered';
+  showSearch: boolean;
+  showCategoryTabs: boolean;
+  sections: MenuSection[];
+  footerText: string;
+}
+
+export const getMenuDesign = () =>
+  api.get<{ data: MenuDesignData }>('/menu-design');
+
+export const saveMenuDesign = (data: Partial<MenuDesignData>) =>
+  api.put<{ data: MenuDesignData }>('/menu-design', data);

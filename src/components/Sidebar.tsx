@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutGrid, Package, MessageSquare, LogOut, UtensilsCrossed, Layers, Star, X } from 'lucide-react';
+import { LayoutGrid, Package, MessageSquare, LogOut, UtensilsCrossed, Layers, Star, X, Paintbrush } from 'lucide-react';
 import { clearToken } from '@/lib/api';
 
 const navItems = [
@@ -11,6 +11,7 @@ const navItems = [
   { href: '/collections', label: 'Collections', icon: Layers },
   { href: '/feedback', label: 'Feedback', icon: Star },
   { href: '/faqs', label: 'FAQs', icon: MessageSquare },
+  { href: '/menu-designer', label: 'Menu Designer', icon: Paintbrush },
 ];
 
 interface Props {
