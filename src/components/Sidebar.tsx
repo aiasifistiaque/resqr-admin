@@ -2,10 +2,11 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutGrid, Package, MessageSquare, LogOut, UtensilsCrossed, Layers, Star, X, Paintbrush } from 'lucide-react';
+import { LayoutGrid, Package, MessageSquare, LogOut, UtensilsCrossed, Layers, Star, X, Paintbrush, LayoutDashboard } from 'lucide-react';
 import { clearToken } from '@/lib/api';
 
 const navItems = [
+  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/categories', label: 'Categories', icon: LayoutGrid },
   { href: '/items', label: 'Items', icon: Package },
   { href: '/collections', label: 'Collections', icon: Layers },

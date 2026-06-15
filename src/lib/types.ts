@@ -39,6 +39,14 @@ export interface Feedback {
   wantsUpdatesPhone: boolean;
   wantsUpdatesEmail: boolean;
   createdAt: string;
+  voiceUrl?: string;
+  voiceTranscript?: string;
+  voiceAiSentiment?: string;
+  voiceAiEmotion?: string;
+  voiceAiInsight?: string;
+  aiSentiment?: 'Positive' | 'Neutral' | 'Negative';
+  aiEmotion?: 'Excited' | 'Satisfied' | 'Neutral' | 'Disappointed' | 'Angry';
+  aiInsight?: string;
 }
 
 export interface Collection {

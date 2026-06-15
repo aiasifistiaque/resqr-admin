@@ -64,6 +64,8 @@ export const getFeedbackList = (page = 1, limit = 20, sort = '-createdAt') =>
 
 export const deleteFeedback = (id: string) => api.delete(`/feedback/${id}`);
 
+export const getFeedbackDashboard = () => api.get('/feedback/dashboard');
+
 export const createCollection = (data: object) => api.post('/collections', data);
 export const updateCollection = (id: string, data: object) => api.put(`/collections/${id}`, data);
 export const deleteCollection = (id: string) => api.delete(`/collections/${id}`);

@@ -6,8 +6,86 @@ import AdminLayout from '@/components/AdminLayout';
 import Modal from '@/components/ui/Modal';
 import Toast from '@/components/ui/Toast';
 import Pagination from '@/components/ui/Pagination';
-import { getFeedbackList, deleteFeedback } from '@/lib/api';
+import { getFeedbackList, deleteFeedback, getFeedbackDashboard } from '@/lib/api';
 import type { Feedback } from '@/lib/types';
+
+// ── Morning dashboard card ─────────────────────────────────────────────────────
+interface DashboardData {
+  yesterday: { total: number; positivePercent: number; mainComplaint: string; mostPraised: string };
+  heatmap: { food: number | null; service: number | null; ambiance: number | null };
+  aiSummary: string;
+}
+
+function MorningCard({ data }: { data: DashboardData }) {
+  const { yesterday, heatmap, aiSummary } = data;
+
+  const bar = (pct: number | null) => {
+    if (pct == null) return <span className="text-xs text-gray-400">—</span>;
+    const color = pct >= 75 ? 'bg-green-500' : pct >= 50 ? 'bg-yellow-400' : 'bg-red-400';
+    return (
+      <div className="flex items-center gap-2 min-w-0">
+        <div className="flex-1 bg-gray-100 rounded-full h-2 min-w-[60px]">
+          <div className={`h-2 rounded-full ${color}`} style={{ width: `${pct}%` }} />
+        </div>
+        <span className="text-sm font-bold text-gray-700 shrink-0">{pct}%</span>
+      </div>
+    );
+  };
+
+  return (
+    <div className="bg-gradient-to-br from-indigo-50 to-white border border-indigo-100 rounded-2xl p-5 mb-5">
+      <div className="flex items-center gap-2 mb-4">
+        <Sparkles size={16} className="text-indigo-500" />
+        <h2 className="text-sm font-bold text-indigo-700 uppercase tracking-wide">Morning Briefing — Yesterday</h2>
+      </div>
+
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+        <div className="bg-white rounded-xl p-3 border border-indigo-50">
+          <p className="text-xs text-gray-400 mb-1">Responses</p>
+          <p className="text-2xl font-black text-gray-900">{yesterday.total}</p>
+        </div>
+        <div className="bg-white rounded-xl p-3 border border-indigo-50">
+          <p className="text-xs text-gray-400 mb-1">Positive</p>
+          <p className="text-2xl font-black text-green-600">{yesterday.positivePercent}%</p>
+        </div>
+        <div className="bg-white rounded-xl p-3 border border-indigo-50">
+          <p className="text-xs text-gray-400 mb-1">Top Complaint</p>
+          <p className="text-sm font-semibold text-red-500 leading-tight mt-0.5">{yesterday.mainComplaint || '—'}</p>
+        </div>
+        <div className="bg-white rounded-xl p-3 border border-indigo-50">
+          <p className="text-xs text-gray-400 mb-1">Most Praised</p>
+          <p className="text-sm font-semibold text-green-600 leading-tight mt-0.5">{yesterday.mostPraised || '—'}</p>
+        </div>
+      </div>
+
+      {/* Sentiment Heatmap */}
+      <div className="bg-white rounded-xl border border-indigo-50 p-4 mb-3">
+        <p className="text-xs font-bold uppercase tracking-wide text-gray-400 mb-3">AI Sentiment Heatmap</p>
+        <div className="space-y-2.5">
+          {[
+            { label: 'Food', val: heatmap.food },
+            { label: 'Service', val: heatmap.service },
+            { label: 'Ambiance', val: heatmap.ambiance },
+          ].map(({ label, val }) => (
+            <div key={label} className="flex items-center gap-3">
+              <span className="text-sm text-gray-600 w-16 shrink-0">{label}</span>
+              {bar(val)}
+              <span className="text-xs text-gray-400 shrink-0">
+                {val != null ? (val >= 75 ? 'Positive' : val >= 50 ? 'Mixed' : 'Needs work') : ''}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {aiSummary && (
+        <p className="text-sm text-indigo-700 bg-indigo-50 rounded-xl px-4 py-3 leading-relaxed">
+          💡 {aiSummary}
+        </p>
+      )}
+    </div>
+  );
+}
 
 interface ToastState { message: string; type: 'success' | 'error' }
 
@@ -179,6 +257,13 @@ export default function FeedbackAdminPage() {
   const [selected, setSelected] = useState<Feedback | null>(null);
   const [summarizeOpen, setSummarizeOpen] = useState(false);
   const [toast, setToast] = useState<ToastState | null>(null);
+  const [dashboard, setDashboard] = useState<DashboardData | null>(null);
+
+  useEffect(() => {
+    getFeedbackDashboard()
+      .then(({ data }) => setDashboard(data.data))
+      .catch(() => {});
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -223,6 +308,9 @@ export default function FeedbackAdminPage() {
 
   return (
     <AdminLayout>
+      {/* Morning Dashboard */}
+      {dashboard && <MorningCard data={dashboard} />}
+
       {/* Header */}
       <div className="flex items-center justify-between mb-5 gap-4">
         <div>
@@ -314,6 +402,7 @@ export default function FeedbackAdminPage() {
                         <div className="flex gap-1 mt-1">
                           {fb.wantsUpdatesPhone && <span className="text-xs bg-green-50 text-green-600 px-1.5 py-0.5 rounded font-medium">SMS</span>}
                           {fb.wantsUpdatesEmail && <span className="text-xs bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded font-medium">Email</span>}
+                          {fb.voiceUrl && <span className="text-xs bg-purple-50 text-purple-600 px-1.5 py-0.5 rounded font-medium">🎙 Voice</span>}
                         </div>
                       </td>
                       <td className="px-4 py-3 font-mono text-xs text-gray-500 whitespace-nowrap">
@@ -332,6 +421,14 @@ export default function FeedbackAdminPage() {
                         {fb.comment
                           ? <p className="text-sm text-gray-500 truncate">{fb.comment}</p>
                           : <span className="text-gray-300">—</span>}
+                        {fb.aiEmotion && (
+                          <span className={`inline-block mt-1 text-xs font-semibold px-1.5 py-0.5 rounded ${
+                            fb.aiEmotion === 'Excited' ? 'bg-purple-50 text-purple-600' :
+                            fb.aiEmotion === 'Satisfied' ? 'bg-blue-50 text-blue-600' :
+                            fb.aiEmotion === 'Disappointed' ? 'bg-orange-50 text-orange-600' :
+                            fb.aiEmotion === 'Angry' ? 'bg-red-50 text-red-600' : 'bg-gray-50 text-gray-500'
+                          }`}>{fb.aiEmotion}</span>
+                        )}
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1 justify-end">
@@ -388,6 +485,12 @@ export default function FeedbackAdminPage() {
                   <p className="text-sm text-gray-600 bg-gray-50 rounded-lg px-3 py-2 mb-3 line-clamp-2">
                     {fb.comment}
                   </p>
+                )}
+                {fb.voiceUrl && (
+                  <div className="mb-3">
+                    <p className="text-xs font-semibold text-purple-600 mb-1.5">🎙 Voice review</p>
+                    <audio controls src={fb.voiceUrl} className="w-full h-8" />
+                  </div>
                 )}
 
                 <div className="flex items-center justify-between">
@@ -464,6 +567,72 @@ export default function FeedbackAdminPage() {
               <div>
                 <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Comment</p>
                 <p className="text-sm text-gray-700 leading-relaxed bg-gray-50 rounded-lg p-3">{selected.comment}</p>
+              </div>
+            )}
+
+            {selected.voiceUrl && (
+              <div>
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Voice Review</p>
+                <audio controls src={selected.voiceUrl} className="w-full rounded-lg" />
+
+                {/* Voice AI badges */}
+                {(selected.voiceAiSentiment || selected.voiceAiEmotion) && (
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    {selected.voiceAiSentiment && (
+                      <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
+                        selected.voiceAiSentiment === 'Positive' ? 'bg-green-100 text-green-700' :
+                        selected.voiceAiSentiment === 'Negative' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-600'
+                      }`}>{selected.voiceAiSentiment}</span>
+                    )}
+                    {selected.voiceAiEmotion && (
+                      <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-purple-100 text-purple-700">
+                        {selected.voiceAiEmotion}
+                      </span>
+                    )}
+                  </div>
+                )}
+
+                {selected.voiceTranscript && (
+                  <p className="text-sm text-gray-600 bg-gray-50 rounded-lg p-3 mt-2 leading-relaxed">
+                    <span className="text-xs font-bold text-gray-400 uppercase tracking-wide block mb-1">Transcript</span>
+                    {selected.voiceTranscript}
+                  </p>
+                )}
+
+                {selected.voiceAiInsight && (
+                  <p className="text-xs text-purple-700 bg-purple-50 rounded-lg px-3 py-2 mt-2">
+                    🎙 {selected.voiceAiInsight}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {(selected.aiSentiment || selected.aiEmotion) && (
+              <div>
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">AI Analysis</p>
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {selected.aiSentiment && (
+                    <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
+                      selected.aiSentiment === 'Positive' ? 'bg-green-100 text-green-700' :
+                      selected.aiSentiment === 'Negative' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-600'
+                    }`}>
+                      {selected.aiSentiment}
+                    </span>
+                  )}
+                  {selected.aiEmotion && (
+                    <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
+                      selected.aiEmotion === 'Excited' ? 'bg-purple-100 text-purple-700' :
+                      selected.aiEmotion === 'Satisfied' ? 'bg-blue-100 text-blue-700' :
+                      selected.aiEmotion === 'Disappointed' ? 'bg-orange-100 text-orange-700' :
+                      selected.aiEmotion === 'Angry' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-600'
+                    }`}>
+                      {selected.aiEmotion}
+                    </span>
+                  )}
+                </div>
+                {selected.aiInsight && (
+                  <p className="text-xs text-indigo-700 bg-indigo-50 rounded-lg px-3 py-2">💡 {selected.aiInsight}</p>
+                )}
               </div>
             )}
 
